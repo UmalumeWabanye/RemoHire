@@ -1,0 +1,2 @@
+-- Placeholder: initial schema will go here next.
+-- We’ll add profiles, developer_profiles, companies, jobs, threads/messages, plus RLS.
