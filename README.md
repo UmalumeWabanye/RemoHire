@@ -1,13 +1,15 @@
-# Monorepo Scaffold
+# README
 
-This repository is set up as a monorepo using npm workspaces for managing applications and packages.
+## Local Development Instructions
 
-## Applications
-- **web**: A Next.js 14 application with TailwindCSS and shadcn/ui.
+To get started with development:
 
-## Packages
-- **shared**: Shared TypeScript + zod schemas.
-- **email**: Resend email templates.
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-## Supabase Migrations
-Migrations for initial SQL schema.
+2. Run the development server:
+   ```bash
+   npm run dev
+   ```
