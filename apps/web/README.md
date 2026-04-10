@@ -1,3 +1,37 @@
+# Web app (apps/web)
+
+This folder contains the Next.js web app for RemoHire.
+
+Local setup (Supabase)
+
+- Create a local environment file at `apps/web/.env.local` (do NOT commit it).
+- Add the following values to `apps/web/.env.local`:
+
+```
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+```
+
+- `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are the public values used by the browser-side Supabase client. Keep server-only keys out of browser envs and in secure server environment variables.
+
+Run the dev server
+
+From the repository root:
+
+```
+npm run dev
+```
+
+Then open: http://localhost:3000/supabase-test
+
+Smoke test page
+
+- `/supabase-test` is a small client component that calls `supabase.auth.getSession()` and displays whether a session exists or an error.
+
+Notes
+
+- Do not commit real secrets. Root and `apps/web/.env.example` contain blank placeholders. Local secrets belong in `apps/web/.env.local` which is ignored by git.
+- You may see a Next.js message about multiple lockfiles if there are both a root `package-lock.json` and `apps/web/package-lock.json`. This is harmless but may be worth standardizing for CI; leave as-is unless you want me to consolidate lockfiles.
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
