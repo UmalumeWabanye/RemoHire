@@ -3,10 +3,22 @@
 import React, { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
 
+type SessionLike = { user?: { email?: string } } | null
+
+type AuthResponse<T> = { data: T; error: { message?: string } | null }
+
+type SupabaseAuthLike = {
+  getSession: () => Promise<AuthResponse<{ session: SessionLike }>>
+  signInWithPassword?: (args: { email: string; password: string }) => Promise<AuthResponse<{ session: SessionLike }>>
+  signUp?: (args: { email: string; password: string }) => Promise<AuthResponse<Record<string, unknown> | null>>
+  signOut?: () => Promise<AuthResponse<null>>
+  onAuthStateChange?: (cb: (event: string, session: SessionLike) => void) => { data?: { subscription?: { unsubscribe?: () => void } } } | { subscription?: { unsubscribe?: () => void } }
+}
+
 export default function SupabaseTestPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [session, setSession] = useState<any | null>(null)
+  const [session, setSession] = useState<SessionLike>(null)
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -36,24 +48,24 @@ export default function SupabaseTestPage() {
     check()
 
     // subscribe to auth changes if available (some stubs may not implement it)
-    let listener: any = null
-    if (typeof (supabase as any).auth.onAuthStateChange === 'function') {
-      const res = (supabase as any).auth.onAuthStateChange((_, s: any) => {
+    let listener: { subscription?: { unsubscribe?: () => void } } | null = null
+    const auth = (supabase as unknown as { auth: SupabaseAuthLike }).auth
+    if (typeof auth.onAuthStateChange === 'function') {
+      const res = auth.onAuthStateChange((_, s) => {
         if (!mounted) return
         setSession(s ?? null)
       })
-      listener = res?.data ?? res
+      listener = (res as unknown as { data?: { subscription?: { unsubscribe?: () => void } } })?.data ?? (res as unknown as { subscription?: { unsubscribe?: () => void } })
     }
 
     return () => {
       mounted = false
       try {
         if (listener) {
-          // try common unsubscribe shapes
           if (listener.subscription && typeof listener.subscription.unsubscribe === 'function') {
             listener.subscription.unsubscribe()
-          } else if (typeof listener.unsubscribe === 'function') {
-            listener.unsubscribe()
+          } else if (typeof (listener as unknown as { unsubscribe?: () => void }).unsubscribe === 'function') {
+            ;(listener as unknown as { unsubscribe?: () => void }).unsubscribe!()
           }
         }
       } catch {
@@ -67,7 +79,8 @@ export default function SupabaseTestPage() {
     setActionLoading(true)
     setMessage(null)
     try {
-      const res = await (supabase as any).auth.signInWithPassword({ email, password })
+      const auth = (supabase as unknown as { auth: SupabaseAuthLike }).auth
+      const res = await auth.signInWithPassword!({ email, password })
       if (res.error) {
         setMessage(`Error: ${res.error.message ?? String(res.error)}`)
       } else {
@@ -86,7 +99,8 @@ export default function SupabaseTestPage() {
     setActionLoading(true)
     setMessage(null)
     try {
-      const res = await (supabase as any).auth.signUp({ email, password })
+      const auth = (supabase as unknown as { auth: SupabaseAuthLike }).auth
+      const res = await auth.signUp!({ email, password })
       if (res.error) {
         setMessage(`Error: ${res.error.message ?? String(res.error)}`)
       } else {
@@ -103,7 +117,8 @@ export default function SupabaseTestPage() {
     setActionLoading(true)
     setMessage(null)
     try {
-      await (supabase as any).auth.signOut()
+      const auth = (supabase as unknown as { auth: SupabaseAuthLike }).auth
+      await auth.signOut!()
       setSession(null)
       setMessage('Signed out')
     } catch (err) {
