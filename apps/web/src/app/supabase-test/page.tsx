@@ -35,15 +35,30 @@ export default function SupabaseTestPage() {
 
     check()
 
-    // subscribe to auth changes
-    const { data: listener } = (supabase as any).auth.onAuthStateChange((_, s: any) => {
-      if (!mounted) return
-      setSession(s ?? null)
-    }) || { data: null }
+    // subscribe to auth changes if available (some stubs may not implement it)
+    let listener: any = null
+    if (typeof (supabase as any).auth.onAuthStateChange === 'function') {
+      const res = (supabase as any).auth.onAuthStateChange((_, s: any) => {
+        if (!mounted) return
+        setSession(s ?? null)
+      })
+      listener = res?.data ?? res
+    }
 
     return () => {
       mounted = false
-      if (listener && listener.subscription) listener.subscription.unsubscribe()
+      try {
+        if (listener) {
+          // try common unsubscribe shapes
+          if (listener.subscription && typeof listener.subscription.unsubscribe === 'function') {
+            listener.subscription.unsubscribe()
+          } else if (typeof listener.unsubscribe === 'function') {
+            listener.unsubscribe()
+          }
+        }
+      } catch {
+        // ignore cleanup errors
+      }
     }
   }, [])
 
