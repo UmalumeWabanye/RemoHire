@@ -1,10 +1,9 @@
 "use client"
-
 import * as React from "react"
 
-export function Card({ children, className }: { children: React.ReactNode; className?: string }) {
+export function Card({ children, className = "" }: React.PropsWithChildren<{ className?: string }>) {
   return (
-    <div className={("rounded border bg-white p-4 shadow-sm " + (className ?? "")).trim()}>{children}</div>
+    <div className={("rounded-2xl bg-card p-6 shadow-sm " + className).trim()}>{children}</div>
   )
 }
 

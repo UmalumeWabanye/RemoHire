@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase/client"
+import Card from "@/components/ui/card"
+import Input from "@/components/ui/input"
 
 export default function SignInPage(): React.ReactElement {
   const router = useRouter()
@@ -53,25 +55,19 @@ export default function SignInPage(): React.ReactElement {
 
   return (
     <main className="min-h-[70vh] flex items-center justify-center px-4 py-8">
-      <div className="w-full max-w-md rounded-2xl bg-card p-8 shadow-lg">
+      <Card className="w-full max-w-md mx-auto">
         <h1 className="text-2xl font-semibold mb-2">Sign in</h1>
         <p className="text-sm text-muted-foreground mb-4">Access your account to manage jobs and applicants.</p>
         {message && <div className="mb-4 text-sm text-red-600">{message}</div>}
         <form onSubmit={handleSignIn} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium">Email</label>
-            <input type="email" name="email" value={email} onChange={(e)=>setEmail(e.target.value)} required className="mt-1 w-full rounded-lg border px-3 py-2 shadow-sm bg-background focus:outline-none focus:ring-2 focus:ring-sky-300" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium">Password</label>
-            <input type="password" name="password" value={password} onChange={(e)=>setPassword(e.target.value)} required className="mt-1 w-full rounded-lg border px-3 py-2 shadow-sm bg-background focus:outline-none focus:ring-2 focus:ring-sky-300" />
-          </div>
+          <Input label="Email" type="email" name="email" value={email} onChange={(e)=>setEmail(e.target.value)} required />
+          <Input label="Password" type="password" name="password" value={password} onChange={(e)=>setPassword(e.target.value)} required />
           <div className="flex items-center justify-between">
             <a href="/auth/signup" className="text-sm text-sky-600">Create account</a>
             <button type="submit" className="rounded-full bg-sky-600 px-4 py-2 text-white" disabled={loading}>{loading ? 'Signing in...' : 'Sign in'}</button>
           </div>
         </form>
-      </div>
+      </Card>
     </main>
   )
 }

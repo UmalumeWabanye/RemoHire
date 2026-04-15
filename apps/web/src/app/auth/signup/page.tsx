@@ -2,6 +2,8 @@
 import React, { useState } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase/client"
+import Card from "@/components/ui/card"
+import Input from "@/components/ui/input"
 
 export default function SignUpPage(): React.ReactElement {
   const router = useRouter()
@@ -52,29 +54,20 @@ export default function SignUpPage(): React.ReactElement {
 
   return (
     <main className="min-h-[70vh] flex items-center justify-center px-4 py-8">
-      <div className="w-full max-w-md rounded-2xl bg-card p-8 shadow-lg">
+      <Card className="w-full max-w-md mx-auto">
         <h1 className="text-2xl font-semibold mb-2">Create account</h1>
         <p className="text-sm text-muted-foreground mb-4">Create an account to post jobs and manage applicants.</p>
         {message && <div className="mb-4 text-sm text-slate-700">{message}</div>}
         <form onSubmit={handleSignUp} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium">Full name</label>
-            <input value={fullName} onChange={(e)=>setFullName(e.target.value)} className="mt-1 w-full rounded-lg border px-3 py-2 shadow-sm bg-background focus:outline-none focus:ring-2 focus:ring-sky-300" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium">Email</label>
-            <input type="email" value={email} onChange={(e)=>setEmail(e.target.value)} required className="mt-1 w-full rounded-lg border px-3 py-2 shadow-sm bg-background focus:outline-none focus:ring-2 focus:ring-sky-300" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium">Password</label>
-            <input type="password" value={password} onChange={(e)=>setPassword(e.target.value)} required className="mt-1 w-full rounded-lg border px-3 py-2 shadow-sm bg-background focus:outline-none focus:ring-2 focus:ring-sky-300" />
-          </div>
+          <Input label="Full name" value={fullName} onChange={(e)=>setFullName(e.target.value)} />
+          <Input label="Email" type="email" value={email} onChange={(e)=>setEmail(e.target.value)} required />
+          <Input label="Password" type="password" value={password} onChange={(e)=>setPassword(e.target.value)} required />
           <div className="flex items-center justify-between">
             <a href="/auth/signin" className="text-sm text-sky-600">Already have an account?</a>
             <button type="submit" className="rounded-full bg-sky-600 px-4 py-2 text-white" disabled={loading}>{loading ? 'Creating...' : 'Create account'}</button>
           </div>
         </form>
-      </div>
+      </Card>
     </main>
   )
 }
