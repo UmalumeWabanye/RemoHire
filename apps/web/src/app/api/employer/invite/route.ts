@@ -3,15 +3,9 @@ import type { NextRequest } from "next/server"
 import createServiceRoleClient from "@/lib/supabase/server"
 import crypto from "crypto"
 
-// Optional email sender (SendGrid) - only used when env vars are set.
-let sendgrid: typeof import('@sendgrid/mail') | null = null
-try {
-  // require lazily so the package is optional until installed
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  sendgrid = require('@sendgrid/mail')
-} catch {
-  sendgrid = null
-}
+// We'll import SendGrid inside the request handler when needed so the package
+// remains optional and we avoid top-level requires or awaits that confuse
+// some linters.
 
 export async function POST(req: NextRequest) {
   try {
@@ -49,17 +43,24 @@ export async function POST(req: NextRequest) {
     try {
       const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY
       const SENDER_EMAIL = process.env.SENDER_EMAIL
-      if (sendgrid && SENDGRID_API_KEY && SENDER_EMAIL) {
-        sendgrid.setApiKey(SENDGRID_API_KEY)
-        const msg = {
-          to: email,
-          from: SENDER_EMAIL,
-          subject: 'You\'re invited to join RemoteHire',
-          text: `You were invited to join RemoteHire. Accept the invite: ${link}`,
-          html: `<p>You were invited to join RemoteHire.</p><p><a href="${link}">Accept invite</a></p>`,
+      if (SENDGRID_API_KEY && SENDER_EMAIL) {
+        try {
+          const sgModule = await import('@sendgrid/mail')
+          const sg = (sgModule.default ?? sgModule) as typeof import('@sendgrid/mail')
+          sg.setApiKey(SENDGRID_API_KEY)
+          const msg = {
+            to: email,
+            from: SENDER_EMAIL,
+            subject: 'You\'re invited to join RemoteHire',
+            text: `You were invited to join RemoteHire. Accept the invite: ${link}`,
+            html: `<p>You were invited to join RemoteHire.</p><p><a href="${link}">Accept invite</a></p>`,
+          }
+          // send and don't block the main result; log failures
+          await sg.send(msg)
+        } catch (mailErr) {
+          console.error('SendGrid module present but failed to send', String(mailErr))
+          if (process.env.NODE_ENV === 'development') console.log('[dev] Invite link:', link)
         }
-        // send and don't block the main result; log failures
-        await sendgrid.send(msg)
       } else {
         if (process.env.NODE_ENV === 'development' || !process.env.SENDGRID_API_KEY) {
           console.log('[dev] Invite link:', link)
