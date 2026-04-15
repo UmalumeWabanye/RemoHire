@@ -14,9 +14,15 @@ export async function POST(request: Request) {
 
     const svc = createServiceRoleClient()
   // upsert a profile. prefer onConflict by id when provided, otherwise upsert by email
-  const payload: Record<string, unknown> = { email, full_name }
-  if (typeof linkedin === 'string') payload.linkedin = linkedin
-  if (typeof onboarding_complete === 'boolean') payload.onboarding_complete = onboarding_complete
+    const payload: Record<string, unknown> = { email, full_name }
+    // validate linkedin URL if provided (basic validation)
+    if (typeof linkedin === 'string' && linkedin.trim().length) {
+      const ln = linkedin.trim()
+      const ok = /^(https?:\/\/(www\.)?linkedin\.com\/.+)/i.test(ln)
+      if (!ok) return NextResponse.json({ error: 'invalid linkedin url' }, { status: 400 })
+      payload.linkedin = ln
+    }
+    if (typeof onboarding_complete === 'boolean') payload.onboarding_complete = onboarding_complete
   if (id) payload.id = id
 
   const onConflict = id ? 'id' : 'email'

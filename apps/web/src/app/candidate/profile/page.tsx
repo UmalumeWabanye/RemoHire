@@ -15,6 +15,7 @@ export default function CandidateProfilePage(): React.ReactElement {
   const [devType, setDevType] = useState("")
   const [skills, setSkills] = useState<string[]>([])
   const [skillInput, setSkillInput] = useState("")
+  const [suggestions, setSuggestions] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   // ...state declared above
@@ -42,6 +43,8 @@ export default function CandidateProfilePage(): React.ReactElement {
               if (dev?.skills) setSkills(dev.skills ?? [])
             }
           } catch {}
+          // set default suggestions for empty devType state
+          updateSuggestions('')
         }
       } catch {
         // ignore
@@ -88,6 +91,25 @@ export default function CandidateProfilePage(): React.ReactElement {
     } finally {
       setSaving(false)
     }
+  }
+
+  const SKILL_MAP: Record<string, string[]> = {
+    frontend: ['React', 'Vue', 'Angular', 'TypeScript', 'JavaScript', 'CSS', 'HTML', 'Next.js'],
+    backend: ['Node.js', 'Express', 'Python', 'Django', 'Flask', 'Java', 'Spring', 'Postgres'],
+    fullstack: ['React', 'Node.js', 'TypeScript', 'GraphQL', 'Next.js', 'Postgres'],
+    devops: ['Docker', 'Kubernetes', 'Terraform', 'AWS', 'GCP', 'CI/CD'],
+    mobile: ['React Native', 'Flutter', 'Swift', 'Kotlin'],
+    data: ['Python', 'Pandas', 'SQL', 'Spark', 'Machine Learning'],
+  }
+
+  function updateSuggestions(input: string) {
+    const base = devType && SKILL_MAP[devType] ? SKILL_MAP[devType] : Object.values(SKILL_MAP).flat()
+    const q = input.trim().toLowerCase()
+    const list = base
+      .filter(s => !skills.includes(s))
+      .filter(s => (q.length === 0) || s.toLowerCase().includes(q))
+      .slice(0, 10)
+    setSuggestions(list)
   }
 
   return (
@@ -157,6 +179,14 @@ export default function CandidateProfilePage(): React.ReactElement {
               placeholder="Add a skill and press Enter"
               className="mt-2 w-full rounded border px-3 py-2"
             />
+            {/* suggestion chips */}
+            {suggestions.length > 0 && (
+              <div className="mt-2 grid gap-2 grid-cols-2 sm:grid-cols-3">
+                {suggestions.map(s => (
+                  <button key={s} type="button" onClick={() => { if (!skills.includes(s)) setSkills([...skills, s]) }} className="rounded-md border px-2 py-1 text-sm text-left">{s}</button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Fiverr removed from onboarding */}

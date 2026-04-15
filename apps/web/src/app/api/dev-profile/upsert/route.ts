@@ -9,9 +9,17 @@ export async function POST(request: Request) {
 
     const svc = createServiceRoleClient()
     const payload: Record<string, unknown> = { user_id }
-  if (typeof headline === 'string') payload.headline = headline
-  if (typeof linkedin_url === 'string') payload.linkedin_url = linkedin_url
-  if (Array.isArray(skills)) payload.skills = skills
+    if (typeof headline === 'string') payload.headline = headline
+    if (typeof linkedin_url === 'string') payload.linkedin_url = linkedin_url
+    // sanitize skills: array of strings, trim, dedupe, limit to 30 entries
+    if (Array.isArray(skills)) {
+      const clean = skills
+        .filter(s => typeof s === 'string')
+        .map(s => s.trim())
+        .filter(s => s.length > 0)
+      const dedup = Array.from(new Set(clean)).slice(0, 30)
+      payload.skills = dedup
+    }
 
     const { data, error } = await svc.from('developer_profiles').upsert(payload, { onConflict: 'user_id' })
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
