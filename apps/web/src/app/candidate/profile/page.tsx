@@ -12,7 +12,6 @@ export default function CandidateProfilePage(): React.ReactElement {
   const [name, setName] = useState("")
   const [message, setMessage] = useState("")
   const [linkedin, setLinkedin] = useState("")
-  const [fiverr, setFiverr] = useState("")
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   // ...state declared above
@@ -27,9 +26,8 @@ export default function CandidateProfilePage(): React.ReactElement {
         if (p) {
           setEmail(p.email ?? "")
           setName(p.full_name ?? "")
-          const pExtra = p as unknown as { linkedin?: string; fiverr?: string }
+          const pExtra = p as unknown as { linkedin?: string }
           setLinkedin(pExtra.linkedin ?? "")
-          setFiverr(pExtra.fiverr ?? "")
         }
       } catch {
         // ignore
@@ -53,7 +51,7 @@ export default function CandidateProfilePage(): React.ReactElement {
       const res = await fetch('/api/auth/create-profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: cleanEmail, full_name: name || undefined, linkedin: linkedin || undefined, fiverr: fiverr || undefined })
+        body: JSON.stringify({ email: cleanEmail, full_name: name || undefined, linkedin: linkedin || undefined })
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json?.error || 'create profile failed')
@@ -70,7 +68,7 @@ export default function CandidateProfilePage(): React.ReactElement {
     <main className="p-8">
       <h1 className="text-2xl font-semibold">Complete your profile</h1>
 
-      <p className="mt-2 text-sm text-zinc-600">Fill in your name and optionally add links to LinkedIn and Fiverr so employers can find you.</p>
+      <p className="mt-2 text-sm text-zinc-600">Fill in your name and optionally add a link to LinkedIn so employers can find you.</p>
 
       <div className="mt-4 max-w-lg">
         <div className="mb-4">
@@ -96,10 +94,7 @@ export default function CandidateProfilePage(): React.ReactElement {
             <Input value={linkedin} onChange={(e) => setLinkedin(e.target.value)} placeholder="https://www.linkedin.com/in/yourhandle" />
           </div>
 
-          <div>
-            <label className="block mt-3 mb-2 text-sm">Fiverr profile</label>
-            <Input value={fiverr} onChange={(e) => setFiverr(e.target.value)} placeholder="https://www.fiverr.com/yourhandle" />
-          </div>
+          {/* Fiverr removed from onboarding */}
 
           <div className="mt-4">
             <button className="rounded-md bg-black px-4 py-2 text-white" type="submit" disabled={saving || !name}>{saving ? 'Saving...' : 'Save and continue'}</button>

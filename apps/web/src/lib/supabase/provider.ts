@@ -91,7 +91,7 @@ export async function getProfileByEmail(email?: string): Promise<Profile | null>
 
   const supabase = createBrowserClient()
   const clean = typeof email === 'string' ? email.trim().toLowerCase() : email
-  const { data } = await supabase.from("profiles").select("id, email, full_name, role, linkedin, fiverr").eq("email", clean).limit(1)
+  const { data } = await supabase.from("profiles").select("id, email, full_name, role, linkedin").eq("email", clean).limit(1)
   return (data && (data as Profile[])[0]) ?? null
 }
 
