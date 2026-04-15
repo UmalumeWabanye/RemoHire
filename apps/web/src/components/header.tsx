@@ -69,6 +69,8 @@ export default function Header(): React.ReactElement {
             <Link href="/jobs" className={pathname === "/jobs" ? "font-semibold" : ""}>Jobs</Link>
             <Link href="/dashboard" className={pathname === "/dashboard" ? "font-semibold" : ""}>Dashboard</Link>
             <Link href="/candidate/profile" className={pathname === "/candidate/profile" ? "font-semibold" : ""}>Profile</Link>
+            <Link href="/platforms/network" className={pathname?.startsWith("/platforms/network") ? "font-semibold" : ""}>Network</Link>
+            <Link href="/platforms/gigs" className={pathname?.startsWith("/platforms/gigs") ? "font-semibold" : ""}>Gigs</Link>
           </nav>
         </div>
 
@@ -81,7 +83,7 @@ export default function Header(): React.ReactElement {
               </Button>
             </>
           ) : (
-            <Link href="/supabase-test">
+            <Link href="/auth/signin">
               <Button size="sm">Sign in</Button>
             </Link>
           )}
