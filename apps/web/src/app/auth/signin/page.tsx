@@ -40,7 +40,8 @@ export default function SignInPage(): React.ReactElement {
         return
       }
 
-      const res = await auth.signInWithPassword({ email, password })
+  const cleanEmail = (email || '').trim().toLowerCase()
+  const res = await auth.signInWithPassword({ email: cleanEmail, password })
       if (res?.error) {
         setMessage(res.error.message || String(res.error))
       } else {

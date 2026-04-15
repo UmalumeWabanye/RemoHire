@@ -27,7 +27,8 @@ export default function SignUpPage(): React.ReactElement {
         return
       }
 
-      const res = await auth.signUp({ email, password })
+  const cleanEmail = (email || '').trim().toLowerCase()
+  const res = await auth.signUp({ email: cleanEmail, password })
       if (res.error) {
         console.debug('signUp error', res)
         setMessage(res.error.message || String(res.error))
@@ -38,7 +39,7 @@ export default function SignUpPage(): React.ReactElement {
           await fetch('/api/auth/create-profile', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: res.data?.user?.id, email, full_name: fullName })
+            body: JSON.stringify({ id: res.data?.user?.id, email: cleanEmail, full_name: fullName })
           })
         } catch (e) {
           console.debug('create-profile failed', e)
