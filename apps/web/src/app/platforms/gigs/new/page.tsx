@@ -1,6 +1,7 @@
 "use client"
 import React from "react"
 import { useRouter } from "next/navigation"
+import { Input, Textarea } from "@/components/ui/input"
 
 export default function NewGigPage(): React.ReactElement {
   const router = useRouter()
@@ -29,12 +30,11 @@ export default function NewGigPage(): React.ReactElement {
       <h1 className="text-2xl font-semibold mb-4">Post a New Gig</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium">Title</label>
-          <input name="title" required className="mt-1 w-full rounded border px-3 py-2" />
+          <Input label="Title" name="title" required />
         </div>
         <div>
-          <label className="block text-sm font-medium">Description</label>
-          <textarea name="description" required className="mt-1 w-full rounded border px-3 py-2 h-32" />
+          <label className="mb-1 text-sm font-medium">Description</label>
+          <Textarea name="description" required rows={6} />
         </div>
         <div className="flex justify-end">
           <button type="submit" className="rounded bg-sky-600 px-4 py-2 text-white">Create Gig</button>
