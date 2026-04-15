@@ -29,21 +29,31 @@ export default function SignUpPage(): React.ReactElement {
 
       const res = await auth.signUp({ email, password })
       if (res.error) {
+        console.debug('signUp error', res)
         setMessage(res.error.message || String(res.error))
       } else {
-        // attempt to create a profile via server API
+        console.debug('signUp response', res)
+        // attempt to create a profile via server API (best-effort)
         try {
           await fetch('/api/auth/create-profile', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id: res.data?.user?.id, email, full_name: fullName })
           })
-        } catch {
-          // ignore profile creation errors
+        } catch (e) {
+          console.debug('create-profile failed', e)
         }
-        // If confirmation email is required, show message; otherwise redirect
-        setMessage('Check your email for a confirmation link if required. Redirecting...')
-        setTimeout(() => router.push('/dashboard'), 1500)
+
+        // If auth returned an active session (user is signed in), redirect to dashboard.
+        // Otherwise, show a clear message instructing the user to check their email.
+        // Supabase may require email confirmation depending on project settings.
+  const hasSession = (res as unknown as { data?: { session?: unknown } })?.data?.session ?? null
+        if (hasSession) {
+          setMessage('Account created — redirecting to your dashboard...')
+          setTimeout(() => router.push('/dashboard'), 800)
+        } else {
+          setMessage('Account created. Check your email for a confirmation link (if required) and then sign in.')
+        }
       }
     } catch (err) {
       setMessage(String(err))
