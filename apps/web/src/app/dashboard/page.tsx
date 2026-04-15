@@ -25,9 +25,32 @@ export default function DashboardPage(): React.ReactElement {
           return
         }
 
-        // if signed in, check profile completion and route to onboarding if needed
+        // if signed in, ensure a profile exists and check completion
         try {
-          const profile = await (await import('@/lib/supabase/provider')).default.getProfileByEmail(u.email ?? undefined)
+          const provider = (await import('@/lib/supabase/provider')).default
+          let profile = await provider.getProfileByEmail(u.email ?? undefined)
+
+          // If no profile row exists, attempt to create one server-side using the service role upsert
+          if (!profile) {
+            try {
+              // send minimal upsert by email; include id only when available on the session user
+              const payload: Record<string, unknown> = { email: (u.email || '').trim().toLowerCase() }
+              // `u` may be a lightweight user object; access `id` defensively
+              const maybeId = (u as unknown as { id?: string }).id
+              if (maybeId) payload.id = maybeId
+
+              await fetch('/api/auth/create-profile', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+              })
+              // re-read profile after upsert
+              profile = await provider.getProfileByEmail(u.email ?? undefined)
+            } catch {
+              // ignore create-profile failures
+            }
+          }
+
           if (!profile || !profile.full_name) {
             router.push('/candidate/profile')
             return
