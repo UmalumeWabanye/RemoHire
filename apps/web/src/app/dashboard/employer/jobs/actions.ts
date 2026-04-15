@@ -3,7 +3,7 @@
 import { cookies as getCookies } from "next/headers"
 import createServerClient from "@/utils/supabase/server"
 
-export async function createJobAction(formData: FormData) {
+export async function createJobAction(formData: FormData): Promise<Record<string, unknown>> {
   const title = formData.get("title") as string
   const description = formData.get("description") as string
   const visibility = (formData.get("visibility") as string) || "private"

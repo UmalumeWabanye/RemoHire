@@ -13,6 +13,7 @@
     "create-test-user": "node tools/create-test-user.js"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.103.0"
+    "@supabase/supabase-js": "^2.103.0",
+    "pg": "^8.20.0"
   }
 }
