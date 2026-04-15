@@ -5,6 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { supabase } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 
 type UserLike = { email?: string | null } | null
 
@@ -86,7 +87,7 @@ export default function Header(): React.ReactElement {
         <div className="flex flex-1 items-center justify-end gap-4">
           <div className="hidden md:block flex-1">
             <div className="max-w-md">
-              <input placeholder="Search jobs, skills, companies" className="w-full rounded-full border px-4 py-2 text-sm shadow-sm bg-background focus:outline-none focus:ring-2 focus:ring-sky-300" />
+              <Input placeholder="Search jobs, skills, companies" className="w-full rounded-full" />
             </div>
           </div>
 
