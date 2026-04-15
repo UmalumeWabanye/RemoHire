@@ -5,7 +5,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json()
   const { id } = body || {}
-  const { email: rawEmail, full_name } = body || {}
+  const { email: rawEmail, full_name, linkedin, fiverr } = body || {}
   let email = rawEmail
   if (typeof email === 'string') email = email.trim().toLowerCase()
     if (!id || !email) {
@@ -13,8 +13,14 @@ export async function POST(request: Request) {
     }
 
     const svc = createServiceRoleClient()
-    // insert a profile if it doesn't exist
-  const { data, error } = await svc.from('profiles').upsert({ id, email, full_name }, { onConflict: 'id' })
+  // upsert a profile. prefer onConflict by id when provided, otherwise upsert by email
+  const payload: Record<string, unknown> = { email, full_name }
+  if (typeof linkedin === 'string') payload.linkedin = linkedin
+  if (typeof fiverr === 'string') payload.fiverr = fiverr
+  if (id) payload.id = id
+
+  const onConflict = id ? 'id' : 'email'
+  const { data, error } = await svc.from('profiles').upsert(payload, { onConflict })
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }

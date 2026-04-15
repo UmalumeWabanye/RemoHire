@@ -19,10 +19,22 @@ export default function DashboardPage(): React.ReactElement {
         if (!mounted) return
         const u = res?.data?.session?.user ?? null
         setUser(u)
-        setLoading(false)
         if (!u) {
+          setLoading(false)
           router.push("/supabase-test")
+          return
         }
+
+        // if signed in, check profile completion and route to onboarding if needed
+        try {
+          const profile = await (await import('@/lib/supabase/provider')).default.getProfileByEmail(u.email ?? undefined)
+          if (!profile || !profile.full_name) {
+            router.push('/candidate/profile')
+            return
+          }
+        } catch {}
+
+        setLoading(false)
       } catch {
         if (!mounted) return
         setLoading(false)

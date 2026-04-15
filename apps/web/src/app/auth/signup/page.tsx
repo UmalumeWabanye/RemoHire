@@ -50,8 +50,8 @@ export default function SignUpPage(): React.ReactElement {
         // Supabase may require email confirmation depending on project settings.
   const hasSession = (res as unknown as { data?: { session?: unknown } })?.data?.session ?? null
         if (hasSession) {
-          setMessage('Account created — redirecting to your dashboard...')
-          setTimeout(() => router.push('/dashboard'), 800)
+          setMessage('Account created — redirecting to profile onboarding...')
+          setTimeout(() => router.push('/candidate/profile'), 800)
         } else {
           setMessage('Account created. Check your email for a confirmation link (if required) and then sign in.')
         }

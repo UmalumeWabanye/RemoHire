@@ -41,11 +41,22 @@ export default function SignInPage(): React.ReactElement {
       }
 
   const cleanEmail = (email || '').trim().toLowerCase()
-  const res = await auth.signInWithPassword({ email: cleanEmail, password })
+      const res = await auth.signInWithPassword({ email: cleanEmail, password })
       if (res?.error) {
         setMessage(res.error.message || String(res.error))
       } else {
-        router.push("/dashboard")
+        // After sign-in, check if the profile exists / is complete and route to onboarding if needed
+        try {
+          const profile = await (await import('@/lib/supabase/provider')).default.getProfileByEmail(cleanEmail)
+          const needsOnboarding = !profile || !profile.full_name
+          if (needsOnboarding) {
+            router.push('/candidate/profile')
+          } else {
+            router.push('/dashboard')
+          }
+        } catch {
+          router.push('/dashboard')
+        }
       }
     } catch (err) {
       setMessage(String(err))
