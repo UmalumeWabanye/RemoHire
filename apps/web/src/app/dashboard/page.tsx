@@ -8,6 +8,7 @@ export default function DashboardPage(): React.ReactElement {
   const router = useRouter()
   const [user, setUser] = useState<{ email?: string | null } | null>(null)
   const [loading, setLoading] = useState(true)
+  const [sessionInfo, setSessionInfo] = useState<string | null>(null)
 
   useEffect(() => {
     let mounted = true
@@ -36,6 +37,15 @@ export default function DashboardPage(): React.ReactElement {
     }
   }, [router])
 
+  async function showSession() {
+    try {
+      const res = await supabase.auth.getSession()
+      setSessionInfo(JSON.stringify(res, null, 2))
+    } catch (e) {
+      setSessionInfo(String(e))
+    }
+  }
+
   if (loading) {
     return <div className="p-8">Checking authentication...</div>
   }
@@ -52,6 +62,10 @@ export default function DashboardPage(): React.ReactElement {
           <li>Create Supabase schema migrations and seed data.</li>
           <li>Implement CRUD pages and APIs for the core entities.</li>
         </ol>
+        <div className="mt-4 border-t pt-3">
+          <button className="rounded bg-gray-100 px-3 py-1 text-sm" onClick={showSession}>Show session</button>
+          {sessionInfo && <pre className="mt-2 max-h-64 overflow-auto text-xs bg-black/5 p-2 rounded">{sessionInfo}</pre>}
+        </div>
       </section>
     </main>
   )
