@@ -31,9 +31,11 @@ export default function RootLayout({
       lang="en"
       className={cn("h-full", "antialiased", geistSans.variable, geistMono.variable, "font-mono", jetbrainsMono.variable)}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col bg-background">
           <Header />
-          {children}
+          <main className="flex-1">
+            <div className="mx-auto max-w-7xl px-6 py-8">{children}</div>
+          </main>
       </body>
     </html>
   );

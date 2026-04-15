@@ -51,27 +51,30 @@ export default function SignUpPage(): React.ReactElement {
   }
 
   return (
-    <main className="mx-auto max-w-md p-6">
-      <h1 className="text-2xl font-semibold mb-4">Create account</h1>
-      {message && <div className="mb-4 text-sm text-slate-700">{message}</div>}
-      <form onSubmit={handleSignUp} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium">Full name</label>
-          <input value={fullName} onChange={(e)=>setFullName(e.target.value)} className="mt-1 w-full rounded border px-3 py-2" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium">Email</label>
-          <input type="email" value={email} onChange={(e)=>setEmail(e.target.value)} required className="mt-1 w-full rounded border px-3 py-2" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium">Password</label>
-          <input type="password" value={password} onChange={(e)=>setPassword(e.target.value)} required className="mt-1 w-full rounded border px-3 py-2" />
-        </div>
-        <div className="flex justify-between items-center">
-          <a href="/auth/signin" className="text-sm text-sky-600">Already have an account?</a>
-          <button type="submit" className="rounded bg-sky-600 px-4 py-2 text-white" disabled={loading}>{loading ? 'Creating...' : 'Create account'}</button>
-        </div>
-      </form>
+    <main className="min-h-[70vh] flex items-center justify-center px-4 py-8">
+      <div className="w-full max-w-md rounded-2xl bg-card p-8 shadow-lg">
+        <h1 className="text-2xl font-semibold mb-2">Create account</h1>
+        <p className="text-sm text-muted-foreground mb-4">Create an account to post jobs and manage applicants.</p>
+        {message && <div className="mb-4 text-sm text-slate-700">{message}</div>}
+        <form onSubmit={handleSignUp} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium">Full name</label>
+            <input value={fullName} onChange={(e)=>setFullName(e.target.value)} className="mt-1 w-full rounded-lg border px-3 py-2 shadow-sm bg-background focus:outline-none focus:ring-2 focus:ring-sky-300" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium">Email</label>
+            <input type="email" value={email} onChange={(e)=>setEmail(e.target.value)} required className="mt-1 w-full rounded-lg border px-3 py-2 shadow-sm bg-background focus:outline-none focus:ring-2 focus:ring-sky-300" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium">Password</label>
+            <input type="password" value={password} onChange={(e)=>setPassword(e.target.value)} required className="mt-1 w-full rounded-lg border px-3 py-2 shadow-sm bg-background focus:outline-none focus:ring-2 focus:ring-sky-300" />
+          </div>
+          <div className="flex items-center justify-between">
+            <a href="/auth/signin" className="text-sm text-sky-600">Already have an account?</a>
+            <button type="submit" className="rounded-full bg-sky-600 px-4 py-2 text-white" disabled={loading}>{loading ? 'Creating...' : 'Create account'}</button>
+          </div>
+        </form>
+      </div>
     </main>
   )
 }
