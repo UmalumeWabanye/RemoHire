@@ -34,27 +34,53 @@ export default function SignUpPage(): React.ReactElement {
         setMessage(res.error.message || String(res.error))
       } else {
         console.debug('signUp response', res)
-        // attempt to create a profile via server API (best-effort)
-        try {
-          await fetch('/api/auth/create-profile', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: res.data?.user?.id, email: cleanEmail, full_name: fullName })
-          })
-        } catch (e) {
-          console.debug('create-profile failed', e)
-        }
 
-        // If auth returned an active session (user is signed in), redirect to dashboard.
-        // Otherwise, show a clear message instructing the user to check their email.
-        // Supabase may require email confirmation depending on project settings.
-  const hasSession = (res as unknown as { data?: { session?: unknown } })?.data?.session ?? null
+        // If signUp returned a session, proceed to onboarding
+        const hasSession = (res as unknown as { data?: { session?: unknown } })?.data?.session ?? null
         if (hasSession) {
+          // best-effort profile creation
+          try {
+            await fetch('/api/auth/create-profile', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ id: res.data?.user?.id, email: cleanEmail, full_name: fullName })
+            })
+          } catch (e) {
+            console.debug('create-profile failed', e)
+          }
+
           setMessage('Account created — redirecting to profile onboarding...')
           setTimeout(() => router.push('/candidate/profile'), 800)
-        } else {
-          setMessage('Account created. Check your email for a confirmation link (if required) and then sign in.')
+          return
         }
+
+        // If no session returned, attempt to sign the user in automatically so they can continue onboarding
+        try {
+          const authSignin = (supabase as unknown as { auth: { signInWithPassword?: (args: { email: string; password: string }) => Promise<{ data?: { session?: unknown } | null; error?: { message?: string } | null }> } }).auth
+          if (authSignin.signInWithPassword) {
+            const signinRes = await authSignin.signInWithPassword({ email: cleanEmail, password })
+            if (!signinRes?.error) {
+              // create profile and route to onboarding
+              try {
+                const signinUserId = (signinRes as unknown as { data?: { session?: { user?: { id?: string } } } })?.data?.session?.user?.id
+                const fallbackUserId = (res as unknown as { data?: { user?: { id?: string } } })?.data?.user?.id
+                await fetch('/api/auth/create-profile', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ id: signinUserId || fallbackUserId, email: cleanEmail, full_name: fullName })
+                })
+              } catch (e) { console.debug('create-profile failed after signin', e) }
+              setMessage('Account created — signed in and redirecting to profile onboarding...')
+              setTimeout(() => router.push('/candidate/profile'), 800)
+              return
+            }
+          }
+        } catch (e) {
+          console.debug('auto-signin failed', e)
+        }
+
+        // Fallback: instruct user to confirm email if automatic signin failed
+        setMessage('Account created. Check your email for a confirmation link (if required) and then sign in.')
       }
     } catch (err) {
       setMessage(String(err))
