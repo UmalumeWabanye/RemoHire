@@ -95,15 +95,15 @@ export async function getProfileByEmail(email?: string): Promise<Profile | null>
   return (data && (data as Profile[])[0]) ?? null
 }
 
-export async function getDevProfile(user_id: string): Promise<{ user_id: string; headline?: string; linkedin_url?: string } | null> {
+export async function getDevProfile(user_id: string): Promise<{ user_id: string; headline?: string; linkedin_url?: string; skills?: string[] } | null> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || ""
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
 
   if (!url || !anon) return null
 
   const supabase = createBrowserClient()
-  const { data } = await supabase.from('developer_profiles').select('user_id, headline, linkedin_url').eq('user_id', user_id).limit(1)
-  return (data && (data as { user_id: string; headline?: string; linkedin_url?: string }[])[0]) ?? null
+  const { data } = await supabase.from('developer_profiles').select('user_id, headline, linkedin_url, skills').eq('user_id', user_id).limit(1)
+  return (data && (data as { user_id: string; headline?: string; linkedin_url?: string; skills?: string[] }[])[0]) ?? null
 }
 
 export async function applyToJob(job_id: string, opts: { profile_id?: string; email?: string; cover_letter?: string }) {

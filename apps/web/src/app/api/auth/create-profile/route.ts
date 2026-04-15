@@ -5,7 +5,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json()
   const { id } = body || {}
-  const { email: rawEmail, full_name, linkedin } = body || {}
+  const { email: rawEmail, full_name, linkedin, onboarding_complete } = body || {}
   let email = rawEmail
   if (typeof email === 'string') email = email.trim().toLowerCase()
     if (!email) {
@@ -16,6 +16,7 @@ export async function POST(request: Request) {
   // upsert a profile. prefer onConflict by id when provided, otherwise upsert by email
   const payload: Record<string, unknown> = { email, full_name }
   if (typeof linkedin === 'string') payload.linkedin = linkedin
+  if (typeof onboarding_complete === 'boolean') payload.onboarding_complete = onboarding_complete
   if (id) payload.id = id
 
   const onConflict = id ? 'id' : 'email'

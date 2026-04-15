@@ -13,6 +13,8 @@ export default function CandidateProfilePage(): React.ReactElement {
   const [message, setMessage] = useState("")
   const [linkedin, setLinkedin] = useState("")
   const [devType, setDevType] = useState("")
+  const [skills, setSkills] = useState<string[]>([])
+  const [skillInput, setSkillInput] = useState("")
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   // ...state declared above
@@ -37,6 +39,7 @@ export default function CandidateProfilePage(): React.ReactElement {
             if (uid) {
               const dev = await getDevProfile(uid)
               if (dev?.headline) setDevType(dev.headline ?? '')
+              if (dev?.skills) setSkills(dev.skills ?? [])
             }
           } catch {}
         }
@@ -62,13 +65,13 @@ export default function CandidateProfilePage(): React.ReactElement {
       const res = await fetch('/api/auth/create-profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: cleanEmail, full_name: name || undefined, linkedin: linkedin || undefined })
+        body: JSON.stringify({ email: cleanEmail, full_name: name || undefined, linkedin: linkedin || undefined, onboarding_complete: true })
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json?.error || 'create profile failed')
       setMessage('Profile saved — redirecting to dashboard...')
       setTimeout(() => router.push('/dashboard'), 800)
-      // also save developer profile dev-type
+      // also save developer profile dev-type and skills
       try {
         const s = await (await import('@/lib/supabase/client')).supabase.auth.getSession()
         const uid = (s as unknown as { data?: { session?: { user?: { id?: string } } } })?.data?.session?.user?.id
@@ -76,7 +79,7 @@ export default function CandidateProfilePage(): React.ReactElement {
           await fetch('/api/dev-profile/upsert', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user_id: uid, headline: devType })
+            body: JSON.stringify({ user_id: uid, headline: devType, skills })
           })
         }
       } catch {}
@@ -128,6 +131,32 @@ export default function CandidateProfilePage(): React.ReactElement {
               <option value="mobile">Mobile</option>
               <option value="data">Data</option>
             </select>
+          </div>
+
+          <div>
+            <label className="block mt-3 mb-2 text-sm">Skills (press Enter to add)</label>
+            <div className="flex gap-2 flex-wrap">
+              {skills.map((s) => (
+                <span key={s} className="inline-flex items-center gap-2 rounded-md bg-gray-100 px-2 py-1 text-sm">
+                  {s}
+                  <button type="button" onClick={() => setSkills(skills.filter(x => x !== s))} className="text-xs">×</button>
+                </span>
+              ))}
+            </div>
+            <input
+              value={skillInput}
+              onChange={(e) => setSkillInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  const next = skillInput.trim()
+                  if (next && !skills.includes(next)) setSkills([...skills, next])
+                  setSkillInput('')
+                }
+              }}
+              placeholder="Add a skill and press Enter"
+              className="mt-2 w-full rounded border px-3 py-2"
+            />
           </div>
 
           {/* Fiverr removed from onboarding */}
