@@ -5,6 +5,10 @@ import { useRouter } from "next/navigation"
 import provider, { getDevProfile } from "@/lib/supabase/provider"
 import { Input } from "@/components/ui/input"
 
+  // Response body from create-profile can be either { error: string } on
+  // failure, or { data, devResult } on success. We'll parse as a generic
+  // Record<string, unknown> and narrow before reading fields.
+
 const SKILL_MAP: Record<string, string[]> = {
   frontend: ['React', 'Vue', 'Angular', 'TypeScript', 'JavaScript', 'CSS', 'HTML', 'Next.js'],
   backend: ['Node.js', 'Express', 'Python', 'Django', 'Flask', 'Java', 'Spring', 'Postgres'],
@@ -99,14 +103,25 @@ export default function CandidateProfilePage(): React.ReactElement {
           skills: skills.length ? skills : undefined,
         })
       })
-      const json = await res.json()
-      if (!res.ok) throw new Error(json?.error || 'create profile failed')
+  let json: Record<string, unknown> | null = null
+      try {
+        json = await res.json()
+      } catch (parseErr) {
+        const text = await res.text().catch(() => '')
+        console.error('create-profile response parse error', parseErr, text)
+        throw new Error('create profile failed (unexpected response)')
+      }
+      if (!res.ok) {
+        const errMsg = json && 'error' in json ? String((json as Record<string, unknown>)['error']) : 'create profile failed'
+        throw new Error(errMsg)
+      }
 
       // If the server attempted to persist developer_profiles but failed, it will
       // include a devResult.error property. We display a non-blocking message and
       // continue to redirect so onboarding flows are not blocked.
-      if (json?.devResult?.error) {
-        console.error('dev upsert warning', json.devResult.error)
+      const devResult = json && 'devResult' in json ? json['devResult'] : undefined
+      if (devResult && typeof devResult === 'object' && 'error' in devResult && typeof (devResult as Record<string, unknown>)['error'] === 'string') {
+        console.error('dev upsert warning', (devResult as Record<string, unknown>)['error'])
         setMessage('Profile saved, but saving developer details failed. You can complete them later.')
       } else {
         setMessage('Profile saved — redirecting to dashboard...')
@@ -114,9 +129,12 @@ export default function CandidateProfilePage(): React.ReactElement {
 
       // redirect after a short delay so the user sees the confirmation message
       setTimeout(() => router.push('/dashboard'), 800)
-    } catch (e) {
-      console.error(e)
-      setMessage("Failed to save profile")
+    } catch (err) {
+      const e = err as Error | { message?: string }
+      // Surface network/fetch errors to the user to help debugging.
+      console.error('handleSave error', e)
+      const msg = e?.message || String(e) || 'Failed to save profile'
+      setMessage(msg)
     } finally {
       setSaving(false)
     }
