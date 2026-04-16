@@ -84,48 +84,37 @@ export default function CandidateProfilePage(): React.ReactElement {
     setMessage("")
     try {
       const cleanEmail = (email || '').trim().toLowerCase()
+      // include dev profile fields in the same request so the server can persist
+      // both profile and developer_profiles atomically (server will attempt the
+      // dev upsert but will not block on failures). This avoids requiring the
+      // client to present an access token for the dev upsert immediately after signup.
       const res = await fetch('/api/auth/create-profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: cleanEmail, full_name: name || undefined, linkedin: linkedin || undefined, onboarding_complete: true })
+        body: JSON.stringify({
+          email: cleanEmail,
+          full_name: name || undefined,
+          linkedin: linkedin || undefined,
+          onboarding_complete: true,
+          headline: devType || undefined,
+          skills: skills.length ? skills : undefined,
+        })
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json?.error || 'create profile failed')
 
-      // now persist developer profile (require authenticated user). If devType is empty
-      // we skip developer profile persistence.
-      if (devType) {
-        try {
-          const s = await (await import('@/lib/supabase/client')).supabase.auth.getSession()
-          const session = (s as unknown as { data?: { session?: { user?: { id?: string }, access_token?: string } } })?.data?.session
-          const accessToken = session?.access_token
-          const uid = session?.user?.id
-
-          if (!uid || !accessToken) {
-            setMessage('You must be signed in to save your developer profile. Please sign in and try again.')
-            return
-          }
-
-          const devRes = await fetch('/api/dev-profile/upsert', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
-            body: JSON.stringify({ headline: devType, skills })
-          })
-          const devJson = await devRes.json()
-          if (!devRes.ok) {
-            setMessage(devJson?.error || 'Failed to save developer profile')
-            return
-          }
-        } catch (err) {
-          console.error('dev-profile save failed', err)
-          setMessage('Failed to save developer profile')
-          return
-        }
+      // If the server attempted to persist developer_profiles but failed, it will
+      // include a devResult.error property. We display a non-blocking message and
+      // continue to redirect so onboarding flows are not blocked.
+      if (json?.devResult?.error) {
+        console.error('dev upsert warning', json.devResult.error)
+        setMessage('Profile saved, but saving developer details failed. You can complete them later.')
+      } else {
+        setMessage('Profile saved — redirecting to dashboard...')
       }
 
-      setMessage('Profile saved — redirecting to dashboard...')
-      // redirect after the saves complete
-      router.push('/dashboard')
+      // redirect after a short delay so the user sees the confirmation message
+      setTimeout(() => router.push('/dashboard'), 800)
     } catch (e) {
       console.error(e)
       setMessage("Failed to save profile")
