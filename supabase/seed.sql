@@ -1,18 +1,12 @@
 -- Optional seed for local testing. Run manually via Supabase SQL Editor.
--- Optional seed for local testing. Run manually via Supabase SQL Editor.
 
 -- WARNING: The statements below are intended for local/dev databases only.
--- They insert a test auth user and a matching profile so we can create
--- a company that satisfies the foreign key constraint on owner_id.
--- Do NOT run this in production unless you understand the implications.
+-- They insert a test auth user and a matching profile so we can exercise
+-- the candidate onboarding/dashboard flow. Do NOT run this in production.
 
 -- Choose a fixed UUID so tests/seed runs are idempotent and easy to reference.
 -- You can change this to gen_random_uuid() if you prefer non-deterministic ids.
-\n-- Seed values (change if you want different test credentials)
-DO $$ BEGIN
-  -- no-op block to keep SQL editors happy when copy/pasting multiple statements
-  NULL;
-END $$;
+-- Seed values (change if you want different test credentials)
 
 -- 1) Create a test auth user (auth.users). This is safe in a local/dev DB
 -- but in production prefer using the Auth API / Dashboard to create users.
@@ -25,7 +19,7 @@ VALUES (
 )
 ON CONFLICT DO NOTHING;
 
--- 2) Create a matching profile row in public.profiles
+-- 2) Create a matching profile row in public.profiles (developer/candidate)
 INSERT INTO public.profiles (id, email, full_name, role, onboarding_complete, created_at, updated_at)
 VALUES (
   '11111111-1111-1111-1111-111111111111',
@@ -38,7 +32,6 @@ VALUES (
 )
 ON CONFLICT DO NOTHING;
 
--- 3) Create a company owned by the seeded profile
 -- 3) Create a developer_profiles row so the candidate onboarding appears complete
 INSERT INTO public.developer_profiles (user_id, headline, skills, linkedin_url, created_at, updated_at)
 VALUES (
