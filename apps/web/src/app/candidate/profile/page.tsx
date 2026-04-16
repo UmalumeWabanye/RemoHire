@@ -1,9 +1,18 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import provider, { getDevProfile } from "@/lib/supabase/provider"
 import { Input } from "@/components/ui/input"
+
+const SKILL_MAP: Record<string, string[]> = {
+  frontend: ['React', 'Vue', 'Angular', 'TypeScript', 'JavaScript', 'CSS', 'HTML', 'Next.js'],
+  backend: ['Node.js', 'Express', 'Python', 'Django', 'Flask', 'Java', 'Spring', 'Postgres'],
+  fullstack: ['React', 'Node.js', 'TypeScript', 'GraphQL', 'Next.js', 'Postgres'],
+  devops: ['Docker', 'Kubernetes', 'Terraform', 'AWS', 'GCP', 'CI/CD'],
+  mobile: ['React Native', 'Flutter', 'Swift', 'Kotlin'],
+  data: ['Python', 'Pandas', 'SQL', 'Spark', 'Machine Learning'],
+}
 
 export default function CandidateProfilePage(): React.ReactElement {
   const router = useRouter()
@@ -19,6 +28,16 @@ export default function CandidateProfilePage(): React.ReactElement {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   // ...state declared above
+
+  const updateSuggestions = useCallback((input: string) => {
+    const base = devType && SKILL_MAP[devType] ? SKILL_MAP[devType] : Object.values(SKILL_MAP).flat()
+    const q = input.trim().toLowerCase()
+    const list = base
+      .filter(s => !skills.includes(s))
+      .filter(s => (q.length === 0) || s.toLowerCase().includes(q))
+      .slice(0, 10)
+    setSuggestions(list)
+  }, [devType, skills])
 
   useEffect(() => {
     let mounted = true
@@ -53,7 +72,7 @@ export default function CandidateProfilePage(): React.ReactElement {
       }
     })()
     return () => { mounted = false }
-  }, [])
+  }, [updateSuggestions])
 
   if (loading) {
     return <div className="p-8">Loading profile…</div>
@@ -73,25 +92,35 @@ export default function CandidateProfilePage(): React.ReactElement {
       const json = await res.json()
       if (!res.ok) throw new Error(json?.error || 'create profile failed')
 
-      // now persist developer profile (require authenticated user)
-      try {
-        const s = await (await import('@/lib/supabase/client')).supabase.auth.getSession()
-        const session = (s as unknown as { data?: { session?: { user?: { id?: string }, access_token?: string } } })?.data?.session
-        const accessToken = session?.access_token
-        const uid = session?.user?.id
+      // now persist developer profile (require authenticated user). If devType is empty
+      // we skip developer profile persistence.
+      if (devType) {
+        try {
+          const s = await (await import('@/lib/supabase/client')).supabase.auth.getSession()
+          const session = (s as unknown as { data?: { session?: { user?: { id?: string }, access_token?: string } } })?.data?.session
+          const accessToken = session?.access_token
+          const uid = session?.user?.id
 
-        if (uid && devType && accessToken) {
+          if (!uid || !accessToken) {
+            setMessage('You must be signed in to save your developer profile. Please sign in and try again.')
+            return
+          }
+
           const devRes = await fetch('/api/dev-profile/upsert', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
             body: JSON.stringify({ headline: devType, skills })
           })
           const devJson = await devRes.json()
-          if (!devRes.ok) throw new Error(devJson?.error || 'dev-profile upsert failed')
+          if (!devRes.ok) {
+            setMessage(devJson?.error || 'Failed to save developer profile')
+            return
+          }
+        } catch (err) {
+          console.error('dev-profile save failed', err)
+          setMessage('Failed to save developer profile')
+          return
         }
-      } catch (err) {
-        // if dev profile save fails, expose a message but continue to redirect to dashboard
-        console.error('dev-profile save failed', err)
       }
 
       setMessage('Profile saved — redirecting to dashboard...')
@@ -105,24 +134,7 @@ export default function CandidateProfilePage(): React.ReactElement {
     }
   }
 
-  const SKILL_MAP: Record<string, string[]> = {
-    frontend: ['React', 'Vue', 'Angular', 'TypeScript', 'JavaScript', 'CSS', 'HTML', 'Next.js'],
-    backend: ['Node.js', 'Express', 'Python', 'Django', 'Flask', 'Java', 'Spring', 'Postgres'],
-    fullstack: ['React', 'Node.js', 'TypeScript', 'GraphQL', 'Next.js', 'Postgres'],
-    devops: ['Docker', 'Kubernetes', 'Terraform', 'AWS', 'GCP', 'CI/CD'],
-    mobile: ['React Native', 'Flutter', 'Swift', 'Kotlin'],
-    data: ['Python', 'Pandas', 'SQL', 'Spark', 'Machine Learning'],
-  }
-
-  function updateSuggestions(input: string) {
-    const base = devType && SKILL_MAP[devType] ? SKILL_MAP[devType] : Object.values(SKILL_MAP).flat()
-    const q = input.trim().toLowerCase()
-    const list = base
-      .filter(s => !skills.includes(s))
-      .filter(s => (q.length === 0) || s.toLowerCase().includes(q))
-      .slice(0, 10)
-    setSuggestions(list)
-  }
+  // SKILL_MAP and updateSuggestions defined above to keep hooks order stable
 
   return (
     <main className="p-8">
