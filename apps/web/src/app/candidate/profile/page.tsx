@@ -49,8 +49,6 @@ export default function CandidateProfilePage(): React.ReactElement {
         if (p) {
           setEmail(p.email ?? "")
           setName(p.full_name ?? "")
-          const pExtra = p as unknown as { linkedin?: string }
-          setLinkedin(pExtra.linkedin ?? "")
           // try to load developer profile (dev-type/headline)
           try {
             // get current user id from session via client supabase
@@ -60,6 +58,7 @@ export default function CandidateProfilePage(): React.ReactElement {
               const dev = await getDevProfile(uid)
               if (dev?.headline) setDevType(dev.headline ?? '')
               if (dev?.skills) setSkills(dev.skills ?? [])
+              if (dev?.linkedin_url) setLinkedin(dev.linkedin_url ?? '')
             }
           } catch {}
           // set default suggestions for empty devType state
