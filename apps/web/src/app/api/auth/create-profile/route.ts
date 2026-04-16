@@ -8,8 +8,11 @@ export async function POST(request: Request) {
   const { email: rawEmail, full_name, onboarding_complete } = body || {}
   let email = rawEmail
   if (typeof email === 'string') email = email.trim().toLowerCase()
-    if (!email) {
-      return NextResponse.json({ error: 'missing email' }, { status: 400 })
+    // Require either email or id (id is the auth.users id). If the client is
+    // authenticated we accept `id` and upsert by id so onboarding can proceed
+    // without re-supplying the email address.
+    if (!email && !id) {
+      return NextResponse.json({ error: 'missing email or id' }, { status: 400 })
     }
 
     const svc = createServiceRoleClient()

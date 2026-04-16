@@ -21,7 +21,6 @@ const SKILL_MAP: Record<string, string[]> = {
 export default function CandidateProfilePage(): React.ReactElement {
   const router = useRouter()
 
-  const [email, setEmail] = useState("")
   const [name, setName] = useState("")
   const [message, setMessage] = useState("")
   const [linkedin, setLinkedin] = useState("")
@@ -47,27 +46,31 @@ export default function CandidateProfilePage(): React.ReactElement {
     let mounted = true
     ;(async () => {
       try {
-        // Attempt to load existing profile for the signed-in user
-        const p = await provider.getProfileByEmail()
-        if (!mounted) return
-        if (p) {
-          setEmail(p.email ?? "")
-          setName(p.full_name ?? "")
-          // try to load developer profile (dev-type/headline)
-          try {
-            // get current user id from session via client supabase
+            // Use the current session to load profile + developer profile. We
+            // don't ask for email during onboarding because signup already
+            // collected it.
             const s = await (await import('@/lib/supabase/client')).supabase.auth.getSession()
-            const uid = (s as unknown as { data?: { session?: { user?: { id?: string } } } })?.data?.session?.user?.id
-            if (uid) {
-              const dev = await getDevProfile(uid)
-              if (dev?.headline) setDevType(dev.headline ?? '')
-              if (dev?.skills) setSkills(dev.skills ?? [])
-              if (dev?.linkedin_url) setLinkedin(dev.linkedin_url ?? '')
+            const session = (s as unknown as { data?: { session?: { user?: { id?: string; email?: string } } } })?.data?.session
+            const uid = session?.user?.id
+            const userEmail = session?.user?.email
+            if (!mounted) return
+            if (userEmail) {
+              try {
+                const p = await provider.getProfileByEmail(userEmail)
+                if (p) setName(p.full_name ?? "")
+              } catch {}
             }
-          } catch {}
-          // set default suggestions for empty devType state
-          updateSuggestions('')
-        }
+            // try to load developer profile (dev-type/headline)
+            try {
+              if (uid) {
+                const dev = await getDevProfile(uid)
+                if (dev?.headline) setDevType(dev.headline ?? '')
+                if (dev?.skills) setSkills(dev.skills ?? [])
+                if (dev?.linkedin_url) setLinkedin(dev.linkedin_url ?? '')
+              }
+            } catch {}
+            // set default suggestions for empty devType state
+            updateSuggestions('')
       } catch {
         // ignore
       } finally {
@@ -86,7 +89,17 @@ export default function CandidateProfilePage(): React.ReactElement {
     setSaving(true)
     setMessage("")
     try {
-      const cleanEmail = (email || '').trim().toLowerCase()
+      // Get current session to identify the user; onboarding should not ask
+      // for email because signup already collected it.
+      const s = await (await import('@/lib/supabase/client')).supabase.auth.getSession()
+      const session = (s as unknown as { data?: { session?: { user?: { id?: string; email?: string } } } })?.data?.session
+      const uid = session?.user?.id
+      if (!uid) {
+        setMessage('You must be signed in to complete onboarding. Please sign in and try again.')
+        setSaving(false)
+        return
+      }
+
       // include dev profile fields in the same request so the server can persist
       // both profile and developer_profiles atomically (server will attempt the
       // dev upsert but will not block on failures). This avoids requiring the
@@ -95,7 +108,7 @@ export default function CandidateProfilePage(): React.ReactElement {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: cleanEmail,
+          id: uid,
           full_name: name || undefined,
           linkedin: linkedin || undefined,
           onboarding_complete: true,
@@ -162,10 +175,7 @@ export default function CandidateProfilePage(): React.ReactElement {
             <Input value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
 
-          <div>
-            <label className="block mt-3 mb-2 text-sm">Email</label>
-            <Input value={email} onChange={(e) => setEmail(e.target.value)} type="email" required />
-          </div>
+          {/* Email is not collected during onboarding; signup already collected it */}
 
           <div>
             <label className="block mt-3 mb-2 text-sm">LinkedIn profile</label>
