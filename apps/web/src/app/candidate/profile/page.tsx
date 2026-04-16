@@ -72,21 +72,33 @@ export default function CandidateProfilePage(): React.ReactElement {
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json?.error || 'create profile failed')
-      setMessage('Profile saved — redirecting to dashboard...')
-      setTimeout(() => router.push('/dashboard'), 800)
-      // also save developer profile dev-type and skills
+
+      // now persist developer profile (require authenticated user)
       try {
         const s = await (await import('@/lib/supabase/client')).supabase.auth.getSession()
-        const uid = (s as unknown as { data?: { session?: { user?: { id?: string } } } })?.data?.session?.user?.id
-        if (uid && devType) {
-          await fetch('/api/dev-profile/upsert', {
+        const session = (s as unknown as { data?: { session?: { user?: { id?: string }, access_token?: string } } })?.data?.session
+        const accessToken = session?.access_token
+        const uid = session?.user?.id
+
+        if (uid && devType && accessToken) {
+          const devRes = await fetch('/api/dev-profile/upsert', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user_id: uid, headline: devType, skills })
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
+            body: JSON.stringify({ headline: devType, skills })
           })
+          const devJson = await devRes.json()
+          if (!devRes.ok) throw new Error(devJson?.error || 'dev-profile upsert failed')
         }
-      } catch {}
-    } catch {
+      } catch (err) {
+        // if dev profile save fails, expose a message but continue to redirect to dashboard
+        console.error('dev-profile save failed', err)
+      }
+
+      setMessage('Profile saved — redirecting to dashboard...')
+      // redirect after the saves complete
+      router.push('/dashboard')
+    } catch (e) {
+      console.error(e)
       setMessage("Failed to save profile")
     } finally {
       setSaving(false)

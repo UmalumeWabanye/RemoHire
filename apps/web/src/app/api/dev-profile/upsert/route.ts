@@ -1,22 +1,36 @@
 import { NextResponse } from 'next/server'
 import { createServiceRoleClient } from '@/lib/supabase/server'
 
+// This endpoint requires a Supabase access token in the Authorization header
+// (Bearer <access_token>). We validate the token using a service-role client
+// and use the authenticated user's id as the target user_id for the upsert.
 export async function POST(request: Request) {
   try {
-    const body = await request.json()
-  const { user_id, headline, linkedin_url, skills } = body || {}
-    if (!user_id) return NextResponse.json({ error: 'missing user_id' }, { status: 400 })
+    const auth = request.headers.get('authorization') || ''
+    const match = auth.match(/^Bearer\s+(.*)$/i)
+    if (!match) return NextResponse.json({ error: 'missing authorization bearer token' }, { status: 401 })
+    const token = match[1]
 
     const svc = createServiceRoleClient()
-    const payload: Record<string, unknown> = { user_id }
+    // validate token and get user
+    const { data: userData, error: userErr } = await svc.auth.getUser(token)
+    if (userErr || !userData?.user?.id) {
+      return NextResponse.json({ error: 'invalid auth token' }, { status: 401 })
+    }
+
+    const body = await request.json()
+    const { headline, linkedin_url, skills } = body || {}
+
+    const payload: Record<string, unknown> = { user_id: userData.user.id }
     if (typeof headline === 'string') payload.headline = headline
     if (typeof linkedin_url === 'string') payload.linkedin_url = linkedin_url
+
     // sanitize skills: array of strings, trim, dedupe, limit to 30 entries
     if (Array.isArray(skills)) {
       const clean = skills
-        .filter(s => typeof s === 'string')
-        .map(s => s.trim())
-        .filter(s => s.length > 0)
+        .filter((s: unknown) => typeof s === 'string')
+        .map((s: string) => s.trim())
+        .filter((s: string) => s.length > 0)
       const dedup = Array.from(new Set(clean)).slice(0, 30)
       payload.skills = dedup
     }
