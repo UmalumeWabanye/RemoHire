@@ -19,6 +19,16 @@ VALUES (
 )
 ON CONFLICT DO NOTHING;
 
+-- Set a dev-only password for the seeded user. Uses PostgreSQL's pgcrypto
+-- crypt() function to hash the password with bcrypt. This requires the
+-- pgcrypto extension (the project's initial migration enables it).
+-- Only run in development. In production, create users via the Auth API.
+UPDATE auth.users
+SET encrypted_password = crypt('Password123!', gen_salt('bf')),
+    email_confirmed_at = COALESCE(email_confirmed_at, now())
+WHERE id = '11111111-1111-1111-1111-111111111111'
+  AND (encrypted_password IS NULL OR encrypted_password = '');
+
 -- 2) Create a matching profile row in public.profiles (developer/candidate)
 INSERT INTO public.profiles (id, email, full_name, role, onboarding_complete, created_at, updated_at)
 VALUES (
